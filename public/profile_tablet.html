@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow — Profile Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Cropper.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .profile-layout { max-width: 600px; margin: 40px auto; padding: 24px; }
+    .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text2); text-decoration: none; margin-bottom: 24px; font-weight: 500; transition: color var(--transition); }
+    .back-btn:hover { color: var(--accent); }
+    
+    .profile-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+    .profile-card h1 { font-size: 1.5rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+    
+    .avatar-upload { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; }
+    .avatar-preview { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; flex-shrink: 0; border: 2px solid var(--bg3); }
+    .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-block; }
+    .upload-btn { border: 1px solid var(--border); color: var(--text); background-color: var(--bg3); padding: 8px 16px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all var(--transition); }
+    .upload-btn-wrapper:hover .upload-btn { border-color: var(--accent); }
+    .upload-btn-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
+    .upload-help { font-size: 0.8rem; color: var(--text3); margin-top: 8px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input { width: 100%; background: var(--bg3); border: 1px solid var(--border); padding: 12px 14px; border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 1rem; transition: border-color var(--transition); }
+    .form-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .form-group input:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .save-btn { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all var(--transition); margin-top: 10px; }
+    .save-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .save-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+    
+    /* TOAST */
+    .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
+    .toast { background: var(--bg3); border: 1px solid var(--border); padding: 12px 20px; border-radius: var(--radius-sm); color: var(--text); font-size: 0.9rem; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.success { border-left: 4px solid var(--success); }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* MOBILE RESPONSIVENESS */
+    @media (max-width: 640px) {
+      .profile-layout { padding: 12px; margin: 20px auto; }
+      .profile-card { padding: 20px; }
+      .profile-card h1 { font-size: 1.25rem; margin-bottom: 20px; }
+      .avatar-preview { width: 64px; height: 64px; font-size: 1.5rem; }
+      .avatar-upload { gap: 16px; margin-bottom: 24px; }
+      .upload-btn { font-size: 0.8rem; padding: 6px 12px; }
+      .form-group { margin-bottom: 16px; }
+      .form-group label { font-size: 0.75rem; }
+      .form-group input { font-size: 0.9rem; padding: 10px 12px; }
+      .save-btn { font-size: 0.95rem; padding: 12px; }
+    }
+  </style>
+
+  <!-- Device redirection script -->
+  <script>
+    (function() {
+      const path = window.location.pathname;
+      let basename = path.split('/').pop();
+      if (!basename) basename = 'index.html';
+      if (!basename.endsWith('.html')) basename += '.html';
+      
+      const baseNameWithoutSuffix = basename.replace(/_(phone|tablet)\.html$/, '').replace(/\.html$/, '');
+      
+      function getDeviceType() {
+         const width = window.innerWidth;
+         const height = window.innerHeight;
+         const ratio = width / height;
+         if (width < 768 || ratio < 0.8) return 'phone';
+         if (width < 1024 || ratio < 1.2) return 'tablet';
+         return 'laptop';
+      }
+      
+      const targetDevice = getDeviceType();
+      
+      let targetFile = baseNameWithoutSuffix + '.html'; 
+      if (targetDevice === 'phone') targetFile = baseNameWithoutSuffix + '_phone.html';
+      else if (targetDevice === 'tablet') targetFile = baseNameWithoutSuffix + '_tablet.html';
+      
+      if (basename !== targetFile) {
+         window.location.replace('/' + targetFile + window.location.search + window.location.hash);
+      }
+      
+      window.addEventListener('resize', () => {
+         const newTargetDevice = getDeviceType();
+         let newTargetFile = baseNameWithoutSuffix + '.html';
+         if (newTargetDevice === 'phone') newTargetFile = baseNameWithoutSuffix + '_phone.html';
+         else if (newTargetDevice === 'tablet') newTargetFile = baseNameWithoutSuffix + '_tablet.html';
+         
+         if (basename !== newTargetFile) {
+             window.location.replace('/' + newTargetFile + window.location.search + window.location.hash);
+         }
+      });
+    })();
+  </script>
+</head>
+<body>
+  <!-- AUTH GUARD: redirect to login if not authenticated -->
+  <script>
+    (async function authGuard() {
+      try {
+        const res = await fetch('http://localhost:3001/api/auth/me', { credentials: 'include' });
+        if (!res.ok) window.location.replace('login.html');
+      } catch(_) { window.location.replace('login.html'); }
+    })();
+  </script>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <main class="profile-layout">
+    <a href="index.html" class="back-btn">← Back to Dashboard</a>
+    
+    <div class="profile-card">
+      <h1>
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="color: var(--accent); margin-right: 4px;">
+          <rect x="2" y="2" width="10" height="10" rx="3" fill="currentColor" opacity="0.9"/>
+          <rect x="16" y="2" width="10" height="10" rx="3" fill="currentColor" opacity="0.6"/>
+          <rect x="2" y="16" width="10" height="10" rx="3" fill="currentColor" opacity="0.6"/>
+          <rect x="16" y="16" width="10" height="10" rx="3" fill="currentColor" opacity="0.3"/>
+        </svg>
+        Profile Dashboard
+      </h1>
+      
+      <form id="profile-form">
+        <div class="avatar-upload">
+          <div class="avatar-preview" id="avatar-preview">?</div>
+          <div>
+            <div class="upload-btn-wrapper">
+              <button type="button" class="upload-btn">Change Picture</button>
+              <input type="file" id="avatar-input" accept="image/png, image/jpeg, image/webp" />
+            </div>
+            <div class="upload-help">JPG, PNG or WebP. Max size 2MB.</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="display-name">Display Name</label>
+          <input type="text" id="display-name" placeholder="How should we call you?" required />
+        </div>
+        
+        <div class="form-group">
+          <label for="username">Username <span class="muted-text">(Cannot be changed)</span></label>
+          <input type="text" id="username" disabled />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address <span class="muted-text">(Cannot be changed)</span></label>
+          <input type="email" id="email" disabled />
+        </div>
+
+        <button type="submit" class="save-btn" id="save-btn">Save Changes</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- CROPPER MODAL -->
+  <div class="crop-modal" id="crop-modal">
+    <div class="crop-modal-content">
+      <div class="crop-modal-header">
+        <h2>Adjust Picture</h2>
+        <button class="crop-close-btn" id="crop-cancel-btn">&times;</button>
+      </div>
+      <div class="crop-img-container">
+        <img id="cropper-image" src="" alt="Picture to crop" />
+      </div>
+      <div class="crop-modal-footer">
+        <div style="flex: 1; display: flex; gap: 8px;">
+          <button class="upload-btn" id="crop-zoom-in-btn" style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;" title="Zoom In">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          </button>
+          <button class="upload-btn" id="crop-zoom-out-btn" style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;" title="Zoom Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          </button>
+        </div>
+        <button class="upload-btn" id="crop-reupload-btn">Re-upload</button>
+        <button class="upload-btn" id="crop-cancel-btn-2">Cancel</button>
+        <button class="save-btn" id="crop-confirm-btn" style="margin-top:0; width:auto;">Crop & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cropper.js JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script src="profile.js"></script>
+</body>
+</html>

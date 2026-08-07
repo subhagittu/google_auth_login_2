@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow — Login</title>
+  <meta name="description" content="Sign in to TaskFlow to manage your personal tasks." />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --accent:  #7c6ff7;
+      --accent2: #5eead4;
+      --danger:  #f87171;
+      --warning: #fbbf24;
+      --success: #34d399;
+      --radius:  16px;
+      --radius-sm: 10px;
+      --transition: 0.22s cubic-bezier(.4,0,.2,1);
+      --font: 'Inter', sans-serif;
+    }
+    [data-theme="dark"] {
+      --bg:   #0f0f13;
+      --bg2:  #17171f;
+      --bg3:  #1e1e2a;
+      --bg4:  #252534;
+      --border: rgba(255,255,255,0.08);
+      --text:  #e8e8f0;
+      --text2: #9898b0;
+      --text3: #5a5a72;
+      --card-bg: rgba(30,30,42,0.9);
+    }
+    [data-theme="light"] {
+      --bg:   #f0f0f8;
+      --bg2:  #f9f9fc;
+      --bg3:  #ffffff;
+      --bg4:  #ececf4;
+      --border: rgba(0,0,0,0.09);
+      --text:  #1a1a2e;
+      --text2: #555570;
+      --text3: #aaaacc;
+      --card-bg: rgba(255,255,255,0.95);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* ── ANIMATED BACKGROUND ── */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      pointer-events: none;
+      animation: orb-float 8s ease-in-out infinite;
+    }
+    .bg-orb-1 { width: 500px; height: 500px; background: #7c6ff7; top: -150px; left: -150px; animation-delay: 0s; }
+    .bg-orb-2 { width: 400px; height: 400px; background: #5eead4; bottom: -100px; right: -100px; animation-delay: 3s; }
+    .bg-orb-3 { width: 300px; height: 300px; background: #f87171; top: 40%; left: 60%; animation-delay: 6s; }
+    @keyframes orb-float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50%       { transform: translateY(-30px) scale(1.05); }
+    }
+
+    /* ── CARD ── */
+    .login-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 44px 40px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+      backdrop-filter: blur(20px);
+      position: relative;
+      z-index: 1;
+      animation: card-drop 0.45s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes card-drop { from { opacity:0; transform:translateY(-30px) scale(0.96); } to { opacity:1; transform:none; } }
+
+    /* ── LOGO ── */
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #7c6ff7, #5eead4);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px; flex-shrink: 0; min-width: 36px;
+    }
+    .logo-text {
+      font-size: 1.5rem; font-weight: 800;
+      background: linear-gradient(90deg, #7c6ff7, #5eead4);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-badge {
+      font-size: 0.65rem; font-weight: 700;
+      background: linear-gradient(135deg, #7c6ff7, #5eead4);
+      color: #fff; border-radius: 20px; padding: 2px 9px;
+    }
+    .login-tagline {
+      font-size: 0.82rem; color: var(--text3); margin-bottom: 32px;
+    }
+
+    /* ── TABS (Login / Register) ── */
+    .auth-tabs {
+      display: flex; gap: 4px;
+      background: var(--bg3);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      margin-bottom: 28px;
+    }
+    .auth-tab {
+      flex: 1; padding: 9px 0;
+      border: none; background: transparent;
+      color: var(--text2); font-family: var(--font);
+      font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; border-radius: 8px;
+      transition: all var(--transition);
+    }
+    .auth-tab.active {
+      background: linear-gradient(135deg, #7c6ff7, #5eead4);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(124,111,247,0.35);
+    }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      color: var(--text2); margin-bottom: 7px; letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .form-group input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .form-group input:focus {
+      border-color: #7c6ff7;
+      box-shadow: 0 0 0 3px rgba(124,111,247,0.18);
+    }
+    .form-group input::placeholder { color: var(--text3); }
+    
+    /* override browser autofill background */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px var(--bg3) inset !important;
+      -webkit-text-fill-color: var(--text) !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    /* ── OTP BOXES ── */
+    .otp-wrap { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
+    .otp-box {
+      width: 48px; height: 55px; padding: 0 !important; text-align: center; line-height: 55px !important;
+      font-size: 1.6rem !important; font-weight: bold; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); background: var(--bg3); color: var(--text);
+      outline: none; transition: border-color var(--transition);
+    }
+    .otp-box:focus { border-color: #7c6ff7; }
+
+    /* password wrapper */
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 1rem;
+      color: var(--text3); padding: 4px;
+      transition: color var(--transition);
+    }
+    .pw-toggle:hover { color: var(--text); }
+
+    /* ── SUBMIT BUTTON ── */
+    .btn-submit {
+      width: 100%; padding: 13px;
+      background: linear-gradient(135deg, #7c6ff7, #5eead4);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-family: var(--font); font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; letter-spacing: 0.02em;
+      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 4px 20px rgba(124,111,247,0.35);
+      margin-top: 6px;
+    }
+    .btn-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 6px 28px rgba(124,111,247,0.45); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ── ALERT / ERROR ── */
+    .auth-alert {
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      font-size: 0.83rem; font-weight: 500;
+      margin-bottom: 18px;
+      display: none;
+      animation: alert-in 0.25s ease;
+    }
+    @keyframes alert-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+    .auth-alert.error   { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); display: flex; gap:8px; align-items:center; }
+    .auth-alert.success { background: rgba(52,211,153,0.12);  border: 1px solid rgba(52,211,153,0.3);  color: var(--success); display: flex; gap:8px; align-items:center; }
+
+    /* ── THEME TOGGLE ── */
+    .theme-btn {
+      position: fixed; top: 20px; right: 20px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 50%; width: 40px; height: 40px;
+      cursor: pointer; transition: all var(--transition); z-index: 10;
+    }
+    .theme-btn:hover { border-color: #7c6ff7; }
+    .theme-btn .sun, .theme-btn .moon { position: absolute; width: 100%; height: 100%; top: 0; left: 0; }
+    .theme-btn svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: block; }
+    [data-theme="dark"]  .sun  { display:none; }
+    [data-theme="dark"]  .moon { display:block; }
+    [data-theme="light"] .sun  { display:block; }
+    [data-theme="light"] .moon { display:none; }
+    .moon { color: #fff; }
+
+    /* ── FOOTER ── */
+    .login-footer {
+      text-align: center; margin-top: 24px;
+      font-size: 0.76rem; color: var(--text3);
+    }
+    
+    /* ── GOOGLE ── */
+    .divider {
+      display: flex; align-items: center; text-align: center; margin: 20px 0;
+      color: var(--text3); font-size: 0.8rem; font-weight: 600;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
+    .divider:not(:empty)::before { margin-right: .5em; }
+    .divider:not(:empty)::after { margin-left: .5em; }
+    .google-wrap { display: flex; justify-content: center; }
+    .resend-link { color: #059669; }
+    [data-theme="dark"] .resend-link { color: #5eead4; }
+
+    /* ── RESPONSIVE (MOBILE) ── */
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      .login-card { padding: 32px 20px; width: 100%; border-radius: 12px; }
+      .otp-wrap { gap: 6px; }
+      .otp-box { width: 38px; height: 46px; font-size: 1.1rem; text-align: center; padding: 0; }
+      .logo-text { font-size: 0.85rem; }
+      .logo-icon { width: 30px; height: 30px; min-width: 30px; font-size: 15px; }
+      .login-tagline { font-size: 0.78rem; }
+    }
+  </style>
+
+  <!-- Device redirection script -->
+  <script>
+    (function() {
+      const path = window.location.pathname;
+      let basename = path.split('/').pop();
+      if (!basename) basename = 'index.html';
+      if (!basename.endsWith('.html')) basename += '.html';
+      
+      const baseNameWithoutSuffix = basename.replace(/_(phone|tablet)\.html$/, '').replace(/\.html$/, '');
+      
+      function getDeviceType() {
+         const width = window.innerWidth;
+         const height = window.innerHeight;
+         const ratio = width / height;
+         if (width < 768 || ratio < 0.8) return 'phone';
+         if (width < 1024 || ratio < 1.2) return 'tablet';
+         return 'laptop';
+      }
+      
+      const targetDevice = getDeviceType();
+      
+      let targetFile = baseNameWithoutSuffix + '.html'; 
+      if (targetDevice === 'phone') targetFile = baseNameWithoutSuffix + '_phone.html';
+      else if (targetDevice === 'tablet') targetFile = baseNameWithoutSuffix + '_tablet.html';
+      
+      if (basename !== targetFile) {
+         window.location.replace('/' + targetFile + window.location.search + window.location.hash);
+      }
+      
+      window.addEventListener('resize', () => {
+         const newTargetDevice = getDeviceType();
+         let newTargetFile = baseNameWithoutSuffix + '.html';
+         if (newTargetDevice === 'phone') newTargetFile = baseNameWithoutSuffix + '_phone.html';
+         else if (newTargetDevice === 'tablet') newTargetFile = baseNameWithoutSuffix + '_tablet.html';
+         
+         if (basename !== newTargetFile) {
+             window.location.replace('/' + newTargetFile + window.location.search + window.location.hash);
+         }
+      });
+    })();
+  </script>
+</head>
+<body>
+  <!-- Animated background orbs -->
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+
+  <!-- Theme toggle -->
+  <button class="theme-btn" id="theme-btn" title="Toggle theme">
+    <span class="sun"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg></span>
+    <span class="moon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></span>
+  </button>
+
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="logo-icon">✦</div>
+      <span class="logo-text">TaskFlow Creator</span>
+    </div>
+    <p class="login-tagline">Your personal task manager. Sign in to continue.</p>
+
+    <!-- Tabs -->
+    <div class="auth-tabs" id="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchMode('login')">Sign In</button>
+      <button class="auth-tab"        id="tab-register" onclick="switchMode('register')">Create Account</button>
+    </div>
+
+    <!-- Alert -->
+    <div class="auth-alert" id="auth-alert"></div>
+
+    <div id="google-auth-section">
+      <div class="google-wrap" id="google-btn"></div>
+      <div class="divider">OR</div>
+    </div>
+
+    <div id="complete-profile-msg" style="display:none; text-align:center; font-size:0.9rem; color:var(--text); margin-bottom:15px; font-weight: 500;">
+      Google authentication successful!<br>Please choose a username and password to complete your account.
+    </div>
+
+    <!-- Form -->
+    <form id="auth-form" onsubmit="handleSubmit(event)" autocomplete="on" novalidate>
+
+      <!-- Display name (register only) -->
+      <div class="form-group" id="group-displayname" style="display:none">
+        <label for="displayname">Display Name</label>
+        <input type="text" id="displayname" placeholder="How should we call you?" maxlength="40" autocomplete="name" />
+      </div>
+
+      <!-- Email (register only) -->
+      <div class="form-group" id="group-email" style="display:none">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com" maxlength="120" autocomplete="email" />
+      </div>
+
+      <div class="form-group" id="group-username">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="e.g. john_doe" maxlength="30"
+               autocomplete="username" spellcheck="false" />
+      </div>
+
+      <div class="form-group" id="group-password">
+        <label for="password" id="password-label">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" placeholder="••••••••" maxlength="128"
+                 autocomplete="current-password" />
+          <button type="button" class="pw-toggle" id="pw-toggle" onclick="togglePw()" title="Show/hide password">👁</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="group-retype-password" style="display:none">
+        <label for="retype-password">Re-type Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="retype-password" placeholder="••••••••" maxlength="128"
+                 autocomplete="new-password" />
+          <button type="button" class="pw-toggle" onclick="toggleRePw()" title="Show/hide password">👁</button>
+        </div>
+      </div>
+
+      <div class="form-group otp-group" id="group-otp" style="display:none;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="otp-shield.png" alt="OTP Shield" style="width: 65px; height: auto; display: block; margin: 0 auto 12px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));" />
+          <h2 style="margin: 0; font-size: 1.3rem; color: var(--text1); font-weight: 700;">Verify OTP</h2>
+          <p style="text-align: center; font-size: 0.85rem; color: var(--text2); margin-bottom: 24px;">
+            Enter the 6-digit code sent to<br/><span style="color: var(--text); font-weight: 500;" id="verify-email-display"></span>
+          </p>
+        </div>
+        <div class="otp-wrap" id="otp-inputs">
+          <input type="text" class="otp-box" maxlength="1" oninput="moveToNext(this, event)" onkeydown="handleKeyDown(this, event)" onpaste="handlePaste(event)" autocomplete="off" />
+          <input type="text" class="otp-box" maxlength="1" oninput="moveToNext(this, event)" onkeydown="handleKeyDown(this, event)" onpaste="handlePaste(event)" autocomplete="off" />
+          <input type="text" class="otp-box" maxlength="1" oninput="moveToNext(this, event)" onkeydown="handleKeyDown(this, event)" onpaste="handlePaste(event)" autocomplete="off" />
+          <input type="text" class="otp-box" maxlength="1" oninput="moveToNext(this, event)" onkeydown="handleKeyDown(this, event)" onpaste="handlePaste(event)" autocomplete="off" />
+          <input type="text" class="otp-box" maxlength="1" oninput="moveToNext(this, event)" onkeydown="handleKeyDown(this, event)" onpaste="handlePaste(event)" autocomplete="off" />
+          <input type="text" class="otp-box" maxlength="1" oninput="moveToNext(this, event)" onkeydown="handleKeyDown(this, event)" onpaste="handlePaste(event)" autocomplete="off" />
+        </div>
+        <input type="hidden" id="otp" />
+        <div style="text-align: center; margin-bottom: 5px;">
+          <a href="#" class="resend-link" style="text-decoration: none; font-size: 0.8rem; font-weight: 600;" id="resend-otp-btn" onclick="resendOtp(event)">Didn't receive code? Resend OTP</a>
+        </div>
+      </div>
+
+      <button class="btn-submit" type="submit" id="submit-btn">Sign In</button>
+      
+      <div id="forgot-password-link" style="text-align:center; margin-top:15px; font-size:0.8rem;">
+        <a href="#" style="color:var(--text2); text-decoration:none;" onclick="switchMode('forgot-password'); return false;">Forgot Password?</a>
+      </div>
+    </form>
+
+    <div class="login-footer">
+      Secure · Private · Your tasks, your eyes only.
+    </div>
+  </div>
+
+  <script>
+      const hostname = window.location.hostname || 'localhost';
+      const API = (hostname === 'localhost' || hostname === '127.0.0.1')
+        ? 'http://localhost:3001/api' 
+        : `http://${hostname}:3001/api`;
+      let mode = 'login';  // 'login' | 'register' | 'complete'
+    
+    // Client ID will be fetched from the backend config
+    let GOOGLE_CLIENT_ID = '';
+
+    // ── Theme ──
+    (function initTheme() {
+      const saved = localStorage.getItem('taskflow-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+
+    document.getElementById('theme-btn').addEventListener('click', () => {
+      const curr = document.documentElement.getAttribute('data-theme');
+      const next = curr === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('taskflow-theme', next);
+      if (window.google && window.google.accounts) renderGoogleBtn();
+    });
+
+    // ── Check if already logged in ──
+    (async function checkSession() {
+      try {
+        const res = await fetch(API + '/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          window.location.replace('index.html');
+        }
+      } catch (_) {}
+    })();
+
+    const formStates = {
+      'login': { username: '', password: '' },
+      'register': { displayname: '', email: '', username: '', password: '' }
+    };
+
+    function saveFormState(currentMode) {
+      if (currentMode === 'login' || currentMode === 'register') {
+        formStates[currentMode] = {
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+          ...(currentMode === 'register' && {
+            displayname: document.getElementById('displayname').value,
+            email: document.getElementById('email').value,
+          })
+        };
+      }
+    }
+
+    function restoreFormState(newMode) {
+      if (newMode === 'login' || newMode === 'register') {
+        const state = formStates[newMode];
+        document.getElementById('username').value = state.username || '';
+        document.getElementById('password').value = state.password || '';
+        if (newMode === 'register') {
+          document.getElementById('displayname').value = state.displayname || '';
+          document.getElementById('email').value = state.email || '';
+        }
+      }
+    }
+
+    // ── Mode switch ──
+    function switchMode(m) {
+      if (mode === 'verify-otp' && m === 'register') {
+        // Clear all form states when going back from OTP to register
+        formStates['register'] = { displayname: '', email: '', username: '', password: '' };
+        document.getElementById('displayname').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('otp').value = '';
+        document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+      } else {
+        saveFormState(mode);
+      }
+      
+      mode = m;
+      document.getElementById('tab-login').classList.toggle('active', m === 'login');
+      document.getElementById('tab-register').classList.toggle('active', m === 'register');
+      
+      const isRegister = m === 'register';
+      const isForgot = m === 'forgot-password';
+      const isForgotVerify = m === 'forgot-password-verify';
+      const isForgotReset = m === 'forgot-password-reset';
+      const isLogin = m === 'login';
+      const isComplete = m === 'complete';
+      const isVerifyOtp = m === 'verify-otp';
+
+      document.getElementById('group-displayname').style.display = isRegister ? 'block' : 'none';
+      document.getElementById('group-email').style.display = (isRegister || isForgot) ? 'block' : 'none';
+      document.getElementById('group-username').style.display = (isLogin || isRegister || isComplete) ? 'block' : 'none';
+      document.getElementById('group-password').style.display = (isLogin || isRegister || isComplete || isForgotReset) ? 'block' : 'none';
+      document.getElementById('group-retype-password').style.display = isForgotReset ? 'block' : 'none';
+      
+      document.getElementById('password-label').textContent = isForgotReset ? 'New Password' : 'Password';
+      
+      document.getElementById('forgot-password-link').style.display = isLogin ? 'block' : 'none';
+      
+
+      // Reset OTP fields if any
+      document.getElementById('group-otp').style.display = (isForgotVerify || isVerifyOtp) ? 'block' : 'none';
+      if (!isForgotVerify && !isVerifyOtp && !isForgotReset) {
+        document.getElementById('otp').value = '';
+      } else {
+        const emailStr = document.getElementById('email').value.trim();
+        document.getElementById('verify-email-display').textContent = emailStr;
+      }
+      
+      let btnText = 'Sign In';
+      if (isRegister) btnText = 'Create Account';
+      if (isForgot) btnText = 'Send OTP';
+      if (isForgotVerify) btnText = 'Verify';
+      if (isForgotReset) btnText = 'Reset Password';
+      if (isVerifyOtp) btnText = 'Verify & Create Account';
+      document.getElementById('submit-btn').textContent = btnText;
+      
+      document.getElementById('password').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+      
+      // Enable/disable inputs based on mode
+      document.getElementById('email').disabled = isForgotVerify || isVerifyOtp || isForgotReset;
+      document.getElementById('username').disabled = isVerifyOtp;
+      document.getElementById('password').disabled = isVerifyOtp;
+      document.getElementById('displayname').disabled = isVerifyOtp;
+      
+      restoreFormState(mode);
+
+      // Hide Google Auth if verifying OTP or completing google profile or forgot password
+      const hideAuthTabs = isComplete || isForgot || isForgotVerify || isForgotReset || isVerifyOtp;
+      document.getElementById('auth-tabs').style.display = hideAuthTabs ? 'none' : 'flex';
+      
+      const hideGoogle = isComplete || isVerifyOtp || isForgot || isForgotVerify || isForgotReset;
+      document.getElementById('google-auth-section').style.display = hideGoogle ? 'none' : 'block';
+      
+      if (isForgot || isForgotVerify || isForgotReset) {
+        document.getElementById('complete-profile-msg').style.display = 'block';
+        document.getElementById('complete-profile-msg').innerHTML = '<a href="#" style="color:var(--text2); text-decoration:none;" onclick="switchMode(\'login\'); return false;">← Back to Sign In</a>';
+      } else if (isVerifyOtp) {
+        document.getElementById('complete-profile-msg').style.display = 'block';
+        document.getElementById('complete-profile-msg').innerHTML = '<a href="#" style="color:var(--text2); text-decoration:none;" onclick="switchMode(\'register\'); return false;">← Back to Create Account</a>';
+      } else if (!isComplete) {
+        document.getElementById('complete-profile-msg').style.display = 'none';
+      }
+      
+      clearAlert();
+      if (window.google && window.google.accounts && !hideGoogle) renderGoogleBtn();
+    }
+
+    // ── Google Auth ──
+    window.onload = async function() {
+      // Clear all inputs on load (helps prevent browser autofill holding old values incorrectly)
+      document.getElementById('auth-form').reset();
+      
+      try {
+        const configRes = await fetch(API + '/config');
+        if (configRes.ok) {
+          const config = await configRes.json();
+          GOOGLE_CLIENT_ID = config.GOOGLE_CLIENT_ID;
+        }
+      } catch (err) {
+        console.error('Error fetching config:', err);
+      }
+      
+      if (window.google && window.google.accounts && GOOGLE_CLIENT_ID) {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCallback
+        });
+        renderGoogleBtn();
+      }
+    };
+    
+    // ── Handle Browser Back Button Cache (bfcache) ──
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        // Force reload if page was restored from bfcache (back button)
+        window.location.reload();
+      }
+    });
+
+    // ── Real-time Password Check ──
+    document.getElementById('retype-password').addEventListener('input', () => {
+       const pw = document.getElementById('password').value;
+       const rpw = document.getElementById('retype-password').value;
+       if (mode === 'forgot-password-reset') {
+         if (pw !== rpw) {
+           showAlert('Passwords do not match.');
+         } else {
+           clearAlert();
+         }
+       }
+    });
+
+    function renderGoogleBtn() {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      // Calculate responsive width: innerWidth minus card padding & body padding margin (approx 60px)
+      const btnWidth = window.innerWidth < 400 ? window.innerWidth - 60 : 330;
+      google.accounts.id.renderButton(
+        document.getElementById("google-btn"),
+        { 
+          theme: isDark ? "filled_black" : "outline", 
+          size: "large", 
+          text: mode === 'login' ? 'signin_with' : 'continue_with', 
+          width: btnWidth 
+        }
+      );
+    }
+
+    async function handleGoogleCallback(response) {
+      const token = response.credential;
+      try {
+        const res = await fetch(API + '/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ token, mode })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          showAlert(data.error || 'Google auth failed');
+        } else {
+          if (data.requiresCompletion) {
+            mode = 'complete';
+            document.getElementById('auth-tabs').style.display = 'none';
+            document.getElementById('google-auth-section').style.display = 'none';
+            document.getElementById('group-email').style.display = 'none';
+            document.getElementById('group-displayname').style.display = 'none';
+            document.getElementById('complete-profile-msg').style.display = 'block';
+            document.getElementById('submit-btn').textContent = 'Complete Registration';
+            clearAlert();
+          } else {
+            showAlert('Welcome! Redirecting...', 'success');
+            setTimeout(() => window.location.replace('index.html'), 900);
+          }
+        }
+      } catch (err) {
+        showAlert('Error communicating with server.');
+      }
+    }
+
+    // ── Password toggle ──
+    function togglePw() {
+      const pw = document.getElementById('password');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+    }
+    function toggleRePw() {
+      const pw = document.getElementById('retype-password');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+    }
+
+    // ── Alert helpers ──
+    function showAlert(msg, type = 'error') {
+      const el = document.getElementById('auth-alert');
+      el.className = 'auth-alert ' + type;
+      el.textContent = msg;
+    }
+    function clearAlert() {
+      const el = document.getElementById('auth-alert');
+      el.className = 'auth-alert';
+      el.textContent = '';
+    }
+
+    // ── Submit ──
+    async function handleSubmit(e) {
+      e.preventDefault();
+      clearAlert();
+
+      const username    = document.getElementById('username').value.trim();
+      const password    = document.getElementById('password').value;
+      const retypePw    = document.getElementById('retype-password').value;
+      const displayName = document.getElementById('displayname').value.trim();
+      const email       = document.getElementById('email').value.trim();
+      const otp         = document.getElementById('otp').value.trim();
+      const btn         = document.getElementById('submit-btn');
+
+      if (mode === 'login' || mode === 'register' || mode === 'complete') {
+        if (!username || !password) {
+          showAlert('Please fill in all required fields.');
+          return;
+        }
+      }
+      if ((mode === 'register' || mode === 'verify-otp' || mode === 'forgot-password' || mode === 'forgot-password-verify' || mode === 'forgot-password-reset') && !email) {
+        showAlert('Please enter your email address.');
+        return;
+      }
+      if ((mode === 'verify-otp' || mode === 'forgot-password-verify') && !otp) {
+        showAlert('Please enter the OTP sent to your email.');
+        return;
+      }
+      if (mode === 'forgot-password-reset') {
+        if (!password || !retypePw) {
+          showAlert('Please enter and confirm your new password.');
+          return;
+        }
+        if (password !== retypePw) {
+          showAlert('Passwords do not match.');
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      if (mode === 'login') btn.textContent = 'Signing in…';
+      else if (mode === 'complete') btn.textContent = 'Saving…';
+      else if (mode === 'register') btn.textContent = 'Verifying...';
+      else if (mode === 'verify-otp') btn.textContent = 'Verifying & Creating…';
+      else if (mode === 'forgot-password') btn.textContent = 'Sending OTP...';
+      else if (mode === 'forgot-password-verify') btn.textContent = 'Verifying...';
+      else if (mode === 'forgot-password-reset') btn.textContent = 'Resetting Password...';
+
+      try {
+        let endpoint = '/auth/register';
+        let body = { username, email, password, displayName };
+        
+        if (mode === 'login') {
+          endpoint = '/auth/login';
+          body = { username, password };
+        } else if (mode === 'complete') {
+          endpoint = '/auth/google/complete';
+          body = { username, password };
+        } else if (mode === 'register') {
+          endpoint = '/auth/send-otp';
+          body = { username, email, password };
+        } else if (mode === 'verify-otp') {
+          endpoint = '/auth/register';
+          body = { username, email, password, displayName, otp };
+        } else if (mode === 'forgot-password') {
+          endpoint = '/auth/forgot-password-otp';
+          body = { email };
+        } else if (mode === 'forgot-password-verify') {
+          endpoint = '/auth/verify-reset-otp';
+          body = { email, otp };
+        } else if (mode === 'forgot-password-reset') {
+          endpoint = '/auth/reset-password';
+          body = { email, otp, newPassword: password };
+        }
+
+        const res = await fetch(API + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(body),
+        });
+        let data = {};
+        try { data = await res.json(); } catch(_) {}
+
+        if (!res.ok) {
+          showAlert(data.error || `Error (${res.status}). Please try again.`);
+        } else {
+          // capture current mode BEFORE switchMode potentially changes it
+          const currentMode = mode;
+          if (currentMode === 'register' || currentMode === 'forgot-password') {
+            // OTP sent successfully
+            showAlert('OTP sent to ' + email + '!', 'success');
+            switchMode(currentMode === 'register' ? 'verify-otp' : 'forgot-password-verify');
+            btn.disabled = false;
+            
+            if (currentMode === 'register') {
+              // Disable other fields so user doesn't change them while verifying
+              document.getElementById('username').disabled = true;
+              document.getElementById('password').disabled = true;
+              document.getElementById('displayname').disabled = true;
+            }
+          } else if (currentMode === 'forgot-password-verify') {
+            showAlert('OTP Verified!', 'success');
+            switchMode('forgot-password-reset');
+            btn.disabled = false;
+          } else {
+            showAlert('Success! Redirecting…', 'success');
+            setTimeout(() => window.location.replace('index.html'), 900);
+          }
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+        showAlert('Network error: ' + (err.message || 'Could not reach server. Make sure the server is running.'));
+      } finally {
+        if (mode === 'verify-otp' || mode === 'forgot-password-verify') {
+          const boxes = document.querySelectorAll('.otp-box');
+          if(boxes.length) boxes[0].focus();
+        }
+        
+        if (mode !== 'verify-otp' && mode !== 'forgot-password-verify' && mode !== 'forgot-password-reset') {
+          btn.disabled = false;
+        } else {
+           const el = document.getElementById('auth-alert');
+           if (el.className.includes('error')) {
+             btn.disabled = false;
+             if (mode === 'verify-otp') btn.textContent = 'Verify & Create Account';
+             if (mode === 'forgot-password-verify') btn.textContent = 'Verify';
+             if (mode === 'forgot-password-reset') btn.textContent = 'Reset Password';
+           }
+        }
+        
+        if (mode === 'login' && !btn.disabled) btn.textContent = 'Sign In';
+        if (mode === 'complete' && !btn.disabled) btn.textContent = 'Complete Registration';
+        if (mode === 'register' && !btn.disabled) btn.textContent = 'Create Account';
+        if (mode === 'forgot-password' && !btn.disabled) btn.textContent = 'Send OTP';
+      }
+    }
+    function handlePaste(event) {
+      event.preventDefault();
+      const pastedData = (event.clipboardData || window.clipboardData).getData('text');
+      const cleanData = pastedData.replace(/[^0-9]/g, '').slice(0, 6);
+      if (!cleanData) return;
+      
+      const boxes = document.querySelectorAll('.otp-box');
+      for (let i = 0; i < cleanData.length; i++) {
+        if (boxes[i]) boxes[i].value = cleanData[i];
+      }
+      
+      if (cleanData.length < 6 && boxes[cleanData.length]) {
+        boxes[cleanData.length].focus();
+      } else if (boxes[5]) {
+        boxes[5].focus();
+      }
+      updateOtpValue();
+    }
+
+    function moveToNext(elem, event) {
+      elem.value = elem.value.replace(/[^0-9]/g, '');
+      updateOtpValue();
+    }
+    
+    function handleKeyDown(elem, event) {
+      if (event.key === 'Backspace') {
+        if (elem.value === '') {
+          let prev = elem.previousElementSibling;
+          if (prev) {
+            prev.focus();
+            prev.value = '';
+          }
+          event.preventDefault();
+        } else {
+          elem.value = '';
+          event.preventDefault();
+        }
+      } else if (event.key === 'Delete') {
+        if (elem.value === '') {
+          let next = elem.nextElementSibling;
+          if (next) next.focus();
+        } else {
+          elem.value = '';
+        }
+        event.preventDefault();
+      } else if (event.key === 'ArrowLeft') {
+        let prev = elem.previousElementSibling;
+        if (prev) prev.focus();
+        event.preventDefault();
+      } else if (event.key === 'ArrowRight') {
+        let next = elem.nextElementSibling;
+        if (next) next.focus();
+        event.preventDefault();
+      } else if (/^[0-9]$/.test(event.key)) {
+        elem.value = event.key;
+        let next = elem.nextElementSibling;
+        if (next) next.focus();
+        event.preventDefault();
+      }
+      setTimeout(updateOtpValue, 10);
+    }
+
+    function updateOtpValue() {
+      const boxes = document.querySelectorAll('.otp-box');
+      let val = '';
+      boxes.forEach(b => val += b.value);
+      document.getElementById('otp').value = val;
+    }
+
+    async function resendOtp(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email) return showAlert('Please enter email to resend OTP.');
+      
+      const btn = document.getElementById('resend-otp-btn');
+      btn.style.pointerEvents = 'none';
+      btn.textContent = 'Sending...';
+      
+      try {
+        let endpoint = mode === 'verify-otp' ? '/auth/send-otp' : '/auth/forgot-password-otp';
+        let body = mode === 'verify-otp' ? { username, email, password } : { email };
+        
+        const res = await fetch(API + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if(res.ok) {
+          showAlert('OTP Resent Successfully!', 'success');
+        } else {
+          showAlert(data.error || 'Failed to resend OTP');
+        }
+      } catch(err) {
+        showAlert('Network error.');
+      } finally {
+        btn.style.pointerEvents = 'auto';
+        btn.textContent = 'Didn\'t receive code? Resend OTP';
+      }
+    }
+  </script>
+</body>
+</html>
