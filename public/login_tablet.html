@@ -429,10 +429,7 @@
   </div>
 
   <script>
-    const hostname = window.location.hostname || 'localhost';
-    const API = (hostname === 'localhost' || hostname === '127.0.0.1')
-      ? 'http://localhost:3001/api' 
-      : `http://${hostname}:3001/api`;
+    const API = 'https://google-auth-login-2-master.onrender.com/api';
     let mode = 'login';  // 'login' | 'register' | 'complete'
     
     // Client ID will be fetched from the backend config

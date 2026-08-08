@@ -27,7 +27,10 @@ const transporter = nodemailer.createTransport({
 
 // ─── MIDDLEWARE ──────────────────────────────────────────────────────────────
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: 'https://your-app.vercel.app', // replace with your actual Vercel URL
+  credentials: true
+}));
 app.use(express.json());
 
 // Public config endpoint

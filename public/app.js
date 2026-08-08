@@ -3,7 +3,7 @@
    All frontend logic: API calls, rendering, events
    ===================================================== */
 
-const API = 'http://localhost:3001/api';
+const API = 'https://google-auth-login-2-master.onrender.com/api';
 
 // ─── STATE ──────────────────────────────────────────────────────
 const state = {
